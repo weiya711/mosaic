@@ -12,29 +12,58 @@
 
 using namespace taco;
 
+TensorInputCache<float> inputCacheFloat;
 
-static void bench_gemv_mkl(benchmark::State& state) {
+static void bench_gemv_mkl(benchmark::State& state, bool gen=true, int fill_value=0) {
+  bool GEN_OTHER = (getEnvVar("GEN") == "ON" && gen);
 
-     // actual computation
+  // Counters must be present in every run to get reported to the CSV.
+  state.counters["dimx"] = 0;
+  state.counters["dimy"] = 0;
+  state.counters["nnz"] = 0;
+  state.counters["other_sparsity1"] = 0;
+  state.counters["other_sparsity1"] = 0;
+
+  auto tensorPath = getEnvVar("SUITESPARSE_TENSOR_PATH");
+  if (tensorPath == "") {
+    std::cout << "BENCHMARK ERROR" << std::endl;
+    state.error_occurred();
+    return;
+  }
+
+  auto pathSplit = taco::util::split(tensorPath, "/");
+  auto filename = pathSplit[pathSplit.size() - 1];
+  auto tensorName = taco::util::split(filename, ".")[0];
+  state.SetLabel(tensorName);
+
+  taco::Tensor<float> ssTensor, otherShifted;
+  try {
+    taco::Format format = CSR;
+    std::tie(ssTensor, otherShifted) = inputCacheFloat.getTensorInput(tensorPath, tensorName, format, true /* countNNZ */,
+                                                                 true /* includeThird */, true, false, GEN_OTHER, true);
+  } catch (TacoException &e) {
+    // Counters don't show up in the generated CSV if we used SkipWithError, so
+    // just add in the label that this run is skipped.
+    std::cout << e.what() << std::endl;
+    state.SetLabel(tensorName + "/SKIPPED-FAILED-READ");
+    return;
+  }
+
+  int DIM0 = ssTensor.getDimension(0);
+  int DIM1 = ssTensor.getDimension(1);
+
+  state.counters["dimx"] = DIM0;
+  state.counters["dimy"] = DIM1;
+  state.counters["nnz"] = inputCacheFloat.nnz;
+
+   // actual computation
    int dim = state.range(0);
+   Tensor<int64_t> otherVec = inputCacheFloat.otherVecLastMode;
   
-   Tensor<float> b("b", {dim}, Format{Dense});
-   Tensor<float> A("A", {dim, dim}, Format{Dense, Dense});
-
-   for (int i = 0; i < dim; i++) {
-      for (int j = 0; j < dim; j++) {
-         A.insert({i, j}, (float) i + j);
-      }
-   }
-
-   A.pack();
-   for (int i = 0; i < dim; i++) {
-      b.insert({i}, (float) i);
-   }
 
    IndexVar i("i");
    IndexVar j("j");
-   IndexExpr accelerateExpr = A(i, j) * b(j);
+   IndexExpr accelerateExpr = ssTensor(i, j) * otherVec(j);
    
    for (auto _ : state) {
     // Setup.
@@ -55,5 +84,7 @@ static void bench_gemv_mkl(benchmark::State& state) {
 
 }
 
-TACO_BENCH(bench_gemv_mkl)->DenseRange(250, 5000, 250);
+TACO_BENCH_ARGS(bench_gemv_mkl, vecmul_spmv, true)->UseRealTime();
+
+// TACO_BENCH(bench_gemv_mkl)->DenseRange(250, 5000, 250);
 

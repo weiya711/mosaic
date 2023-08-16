@@ -176,6 +176,7 @@ const string cHeaders =
   "  free(t->mode_types);\n"
   "  free(t);\n"
   "}\n"
+  "#include \"mkl-wrappers.h\"\n"
   "int lC = 0;\n"
   "int kB = 0;\n"
   "#endif\n";

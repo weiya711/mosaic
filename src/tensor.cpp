@@ -1448,6 +1448,53 @@ TensorBase dispatchRead(T& file, FileType filetype, U format, bool pack) {
   return tensor;
 }
 
+template <typename T, typename U>
+TensorBase dispatchRead(T& file, FileType filetype, U format, std::vector<int> dims, bool pack) {
+    TensorBase tensor;
+    switch (filetype) {
+        case FileType::ttx:
+        case FileType::mtx:
+            tensor = readMTX(file, format, pack);
+            break;
+        case FileType::tns:
+            tensor = readTNS(file, format, dims, pack);
+            break;
+        case FileType::rb:
+            tensor = readRB(file, format, pack);
+            break;
+    }
+    return tensor;
+}
+
+template <typename U>
+TensorBase dispatchRead(std::string filename, U format, std::vector<int> dims, bool pack) {
+  string extension = getExtension(filename);
+
+  TensorBase tensor;
+  if (extension == "ttx") {
+    tensor = dispatchRead(filename, FileType::ttx, format, pack);
+  }
+  else if (extension == "tns") {
+    tensor = dispatchRead(filename, FileType::tns, format, dims, pack);
+  }
+  else if (extension == "mtx") {
+    tensor = dispatchRead(filename, FileType::mtx, format, pack);
+  }
+  else if (extension == "rb") {
+    tensor = dispatchRead(filename, FileType::rb, format, pack);
+  }
+  else {
+    taco_uerror << "File extension not recognized: " << filename << std::endl;
+  }
+
+  string name = filename.substr(filename.find_last_of("/") + 1);
+  name = name.substr(0, name.find_first_of("."));
+  std::replace(name.begin(), name.end(), '-', '_');
+  tensor.setName(name);
+
+  return tensor;
+}
+
 template <typename U>
 TensorBase dispatchRead(std::string filename, U format, bool pack) {
   string extension = getExtension(filename);
@@ -1483,6 +1530,10 @@ TensorBase read(std::string filename, ModeFormat modetype, bool pack) {
 
 TensorBase read(std::string filename, Format format, bool pack) {
   return dispatchRead(filename, format, pack);
+}
+
+TensorBase readDim(std::string filename, Format format, std::vector<int> dimensions, bool pack) {
+    return dispatchRead(filename, format, dimensions, pack);
 }
 
 TensorBase read(string filename, FileType filetype, ModeFormat modetype,

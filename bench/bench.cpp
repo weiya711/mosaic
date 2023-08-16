@@ -104,6 +104,32 @@ std::string constructMinMaxTensorKey(int order, int variant) {
   return result.str();
 }
 
+
+std::string constructOtherVecKey(std::string tensorName, std::string variant, float sparsity) {
+    auto path = getTacoTensorPath();
+    std::stringstream result;
+    result << path;
+    if (path[path.size() - 1] != '/') {
+        result << "/";
+    }
+    result << "other/";
+    result << tensorName << "-" << variant << "-" << sparsity << ".tns";
+    return result.str();
+}
+
+std::string constructOtherMatKey(std::string tensorName, std::string variant, std::vector<int> dims, float sparsity) {
+    auto path = getTacoTensorPath();
+    std::stringstream result;
+    result << path;
+    if (path[path.size() - 1] != '/') {
+        result << "/";
+    }
+    result << "other/";
+    result << tensorName << "-" << variant << "-" << taco::util::join(dims, "x") << "-" << sparsity << ".tns";
+    return result.str();
+}
+
+
 taco::TensorBase loadMinMaxTensor(std::string name, int order, taco::Format format, int variant) {
   // For now, just say that the python code must generate the random
   // tensor before use.
@@ -111,3 +137,4 @@ taco::TensorBase loadMinMaxTensor(std::string name, int order, taco::Format form
   tensor.setName(name);
   return tensor;
 }
+
