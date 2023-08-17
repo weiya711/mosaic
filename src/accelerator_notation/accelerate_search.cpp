@@ -161,11 +161,13 @@ bool hasOpMatch(IndexExpr e1, AcceleratorExpr e2){
 /// that matching can be forced using a tiling op!
 ArgumentMap hasPreciseMatch(IndexExpr e1, AcceleratorExpr e2){
 
-    // std::cout << e2 << std::endl;
-    // std::cout << util::join(getOpPattern(e2)) << std::endl;
-    // std::cout << util::join(getOpPattern(e1)) << std::endl;
+//    std::cout << e1 << std::endl;
+//    std::cout << e2 << std::endl;
+//    std::cout << util::join(getOpPattern(e2)) << std::endl;
+//    std::cout << util::join(getOpPattern(e1)) << std::endl;
 
     if (!hasOpMatch(e1, e2)) {
+	std::cout << "Operator doesn't match" << std::endl;
         return ArgumentMap(false);
     }
 
@@ -208,6 +210,7 @@ ArgumentMap hasPreciseMatch(IndexExpr e1, AcceleratorExpr e2){
     PrecisePatternAccelExpr(e2, e2Pattern, e2Nodes);
 
     if (e1Pattern != e2Pattern){
+	std::cout << "Pattern doesn't match " << std::endl;
         return ArgumentMap(false);
     }
 
@@ -219,14 +222,18 @@ ArgumentMap hasPreciseMatch(IndexExpr e1, AcceleratorExpr e2){
                     auto node2 = to<AcceleratorAccessNode>(e2Nodes[i].ptr);
 
                     if (node1->tensorVar.getFormat() != node2->tensorObject.getFormat()){
+                    	std::cout << node1->tensorVar.getFormat() << " " <<  node2->tensorObject.getFormat() << std::endl;
+			std::cout << "Format doesn't match" << std::endl;
                         return  ArgumentMap(false); 
                     }
 
                     if (node1->tensorVar.getType().getDataType() != node2->tensorObject.getType().getDataType()){
+			std::cout << "Datatype doesn't match" << std::endl;
                         return  ArgumentMap(false);
                     }
 
                     if (node1->tensorVar.getType().getOrder() != node2->tensorObject.getType(). getOrder()){
+			std::cout << "Order doesn't match" << std::endl;
                         return  ArgumentMap(false);
                     }   
 
@@ -248,6 +255,8 @@ ArgumentMap hasPreciseMatch(IndexExpr e1, AcceleratorExpr e2){
                     // }
 
                     if (!node1->tensorVar.hasProperties(node2->tensorObject.getProperties())){
+			std::cout << "Porperties doesn't match" << std::endl;
+
                          return false;
                     }
 
@@ -263,6 +272,7 @@ ArgumentMap hasPreciseMatch(IndexExpr e1, AcceleratorExpr e2){
             case LITERALNODE:
                 {
                     if (e1Nodes[i].getDataType() != e2Nodes[i].getDataType()){
+			std::cout << "Literal node Datatype doesn't match"  << std::endl;
                         return ArgumentMap(false);
                     }
                     break;

@@ -34,6 +34,34 @@ class MklSgemv : public AbstractFunctionInterface{
         IndexVar j;
 };
 
+class SparseMklSpmm : public AbstractFunctionInterface{
+    public: 
+        SparseMklSpmm() : x(TensorObject(Type(taco::Float32, {Dimension(), Dimension()}), Format{Dense, Sparse})), 
+                  y(TensorObject(Type(taco::Float32, {Dimension(), Dimension()}), CSC)),
+                  z(TensorObject(Type(taco::Float32, {Dimension(), Dimension()}), Format{Dense, Dense})),
+                  i(IndexVar()),
+                  j(IndexVar()),
+                  k(IndexVar()) {};
+        AcceleratorStmt getStmt() const override {return z(i,k) = x(i, j)*y(j,k);}
+        std::vector<Argument> getArguments() const override {return 
+                                                {
+                                                    new DimArg(i), 
+                                                    new DimArg(j), 
+                                                    new TensorName(x),
+                                                    new TensorName(y),
+                                                    new TensorName(z),
+                                                };}
+        std::string getReturnType() const override {return "void";}
+        std::string getFunctionName() const override {return "mkl_sparse_s_spmm_internal";}
+    private: 
+        TensorObject x;
+        TensorObject y;
+        TensorObject z;
+        IndexVar i;
+        IndexVar j;
+        IndexVar k;
+};
+
 
 class SparseMklSgemv : public AbstractFunctionInterface{
     public: 

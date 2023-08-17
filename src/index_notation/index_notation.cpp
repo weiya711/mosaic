@@ -4566,6 +4566,7 @@ IndexStmt IndexStmt::accelerate(FunctionInterface functionInterface, IndexExpr e
 
 
   AcceleratorStmt referenceStmt = functionInterface.getNode()->getStmt();
+  std::cout << referenceStmt << std::endl;
   if (!isa<AcceleratorAssignment>(referenceStmt)){
     taco_uerror << "Reference statement in function interface must be an assignment" << endl;
   }

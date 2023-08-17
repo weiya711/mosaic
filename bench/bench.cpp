@@ -138,3 +138,5 @@ taco::TensorBase loadMinMaxTensor(std::string name, int order, taco::Format form
   return tensor;
 }
 
+TensorInputCache<float> inputCacheFloat;
+

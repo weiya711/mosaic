@@ -254,6 +254,7 @@ struct TensorInputCache {
             auto lastMode = this->inputTensor.getDimensions().size() - 1;
             this->otherVecLastMode = genOtherVec<T, T>("D", datasetName, this->inputTensor, lastMode);
         } else if (includeVec) {
+		std::cout << "Getting OTHER vector for " << datasetName << std::endl;
             std::vector<int32_t> firstDim;
             std::vector<int32_t> lastDim;
             if (this->inputTensor.getOrder() == 2) {
@@ -306,6 +307,6 @@ struct TensorInputCache {
     int64_t nnz;
 };
 
-
+extern TensorInputCache<float> inputCacheFloat;
 
 #endif //TACO_BENCH_BENCH_H

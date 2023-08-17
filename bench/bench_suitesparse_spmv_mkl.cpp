@@ -13,7 +13,7 @@
 using namespace taco;
 
 
-static void bench_gemv_mkl(benchmark::State& state, bool gen=true, int fill_value=0) {
+static void bench_suitesparse_spmv_mkl(benchmark::State& state, bool gen=true, int fill_value=0) {
   bool GEN_OTHER = (getEnvVar("GEN") == "ON" && gen);
 
   // Counters must be present in every run to get reported to the CSV.
@@ -55,14 +55,13 @@ static void bench_gemv_mkl(benchmark::State& state, bool gen=true, int fill_valu
   state.counters["dimy"] = DIM1;
   state.counters["nnz"] = inputCacheFloat.nnz;
 
-   std::cout << ssTensor << std::endl;
+ //   std::cout << ssTensor << std::endl;
  //   std::cout << otherVec << std::endl;
 
    // actual computation
    // int dim = state.range(0);
    std::cout << "Before get vec" << std::endl;
    Tensor<float> otherVec = inputCacheFloat.otherVecLastMode;
-   std::cout << otherVec << std::endl;
 
    Tensor<float> otherVecDense("D", {DIM1}, Format{Dense});
    std::vector<int> coords(otherVec.getOrder());
@@ -74,14 +73,9 @@ static void bench_gemv_mkl(benchmark::State& state, bool gen=true, int fill_valu
 
    }
 
-   std::cout << otherVecDense << std::endl;
-
-  
-
    IndexVar i("i");
    IndexVar j("j");
    IndexExpr accelerateExpr = ssTensor(i, j) * otherVecDense(j);
-   std::cout << "After expr " << accelerateExpr << std::endl;
    
    for (auto _ : state) {
     // Setup.
@@ -89,25 +83,17 @@ static void bench_gemv_mkl(benchmark::State& state, bool gen=true, int fill_valu
     Tensor<float> res("res", {DIM0}, Format{Dense});
     res(i) = accelerateExpr;
    
-    std::cout << "Before concretize" << std::endl;
     IndexStmt stmt = res.getAssignment().concretize();
-    std::cout << stmt << std::endl;
-    stmt = stmt.accelerate(new MklSgemv(), accelerateExpr, true);
-    std::cout << "After concretize" << std::endl;
+    stmt = stmt.accelerate(new SparseMklSgemv(), accelerateExpr, true);
 
     res.compile(stmt);
     res.assemble();
-    std::cout << "After assemble" << std::endl;
     auto func = res.compute_split();
     auto pair = res.returnFuncPackedRaw(func);
-    std::cout << "before compute" << std::endl;
     state.ResumeTiming();
     pair.first(func.data());
   }
 
 }
 
-TACO_BENCH_ARGS(bench_gemv_mkl, vecmul_spmv, true)->UseRealTime();
-
-// TACO_BENCH(bench_gemv_mkl)->DenseRange(250, 5000, 250);
-
+TACO_BENCH_ARGS(bench_suitesparse_spmv_mkl, vecmul_spmv, true)->UseRealTime();
