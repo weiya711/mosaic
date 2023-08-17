@@ -81,4 +81,4 @@ static void bench_suitesparse_spmm_mkl(benchmark::State& state, bool gen=true, i
   }
 }
 
-TACO_BENCH_ARGS(bench_suitesparse_spmm_mkl, vecmul_spmv, true)->UseRealTime();
+TACO_BENCH_ARGS(bench_suitesparse_spmm_mkl, matmul_spmm, true)->UseRealTime();
