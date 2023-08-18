@@ -13,7 +13,7 @@
 using namespace taco;
 
 
-static void bench_suitesparse_spmm_mkl(benchmark::State& state, bool gen=true, int fill_value=0) {
+static void bench_suitesparse_spmm_taco(benchmark::State& state, bool gen=true, int fill_value=0) {
   bool GEN_OTHER = (getEnvVar("GEN") == "ON" && gen);
 
   // Counters must be present in every run to get reported to the CSV.
@@ -70,7 +70,6 @@ static void bench_suitesparse_spmm_mkl(benchmark::State& state, bool gen=true, i
     res(i, k) = accelerateExpr;
    
     IndexStmt stmt = res.getAssignment().concretize();
-    stmt = stmt.accelerate(new SparseMklSpmm(), accelerateExpr, true);
 
     res.compile(stmt);
 
@@ -82,4 +81,4 @@ static void bench_suitesparse_spmm_mkl(benchmark::State& state, bool gen=true, i
   }
 }
 
-TACO_BENCH_ARGS(bench_suitesparse_spmm_mkl, matmul_spmm, true)->UseRealTime();
+TACO_BENCH_ARGS(bench_suitesparse_spmm_taco, matmul_spmm, true)->UseRealTime();

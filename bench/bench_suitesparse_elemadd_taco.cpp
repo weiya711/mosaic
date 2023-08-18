@@ -13,7 +13,7 @@
 using namespace taco;
 
 
-static void bench_suitesparse_spmm_mkl(benchmark::State& state, bool gen=true, int fill_value=0) {
+static void bench_suitesparse_elemadd_taco(benchmark::State& state, bool gen=true, int fill_value=0) {
   bool GEN_OTHER = (getEnvVar("GEN") == "ON" && gen);
 
   // Counters must be present in every run to get reported to the CSV.
@@ -60,20 +60,17 @@ static void bench_suitesparse_spmm_mkl(benchmark::State& state, bool gen=true, i
 
    IndexVar i("i");
    IndexVar j("j");
-   IndexVar k("k");
-   IndexExpr accelerateExpr = ssTensor(i, j) * otherShiftedTrans(j, k);
+   IndexExpr accelerateExpr = ssTensor(i, j) + otherShifted(i, j);
    
    for (auto _ : state) {
     // Setup.
     state.PauseTiming();
-    Tensor<float> res("res", {DIM0, DIM0}, Format{Dense, Dense});
-    res(i, k) = accelerateExpr;
+    Tensor<float> res("res", {DIM0, DIM1}, Format{Dense, Sparse});
+    res(i, j) = accelerateExpr;
    
     IndexStmt stmt = res.getAssignment().concretize();
-    stmt = stmt.accelerate(new SparseMklSpmm(), accelerateExpr, true);
 
     res.compile(stmt);
-
     state.ResumeTiming();
     res.assemble();
     auto func = res.compute_split();
@@ -82,4 +79,5 @@ static void bench_suitesparse_spmm_mkl(benchmark::State& state, bool gen=true, i
   }
 }
 
-TACO_BENCH_ARGS(bench_suitesparse_spmm_mkl, matmul_spmm, true)->UseRealTime();
+TACO_BENCH_ARGS(bench_suitesparse_elemadd_taco, mat_elemadd_mmadd, true)->UseRealTime();
+

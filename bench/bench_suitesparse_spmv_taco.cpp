@@ -13,7 +13,7 @@
 using namespace taco;
 
 
-static void bench_suitesparse_spmm_mkl(benchmark::State& state, bool gen=true, int fill_value=0) {
+static void bench_suitesparse_spmv_taco(benchmark::State& state, bool gen=true, int fill_value=0) {
   bool GEN_OTHER = (getEnvVar("GEN") == "ON" && gen);
 
   // Counters must be present in every run to get reported to the CSV.
@@ -55,31 +55,44 @@ static void bench_suitesparse_spmm_mkl(benchmark::State& state, bool gen=true, i
   state.counters["dimy"] = DIM1;
   state.counters["nnz"] = inputCacheFloat.nnz;
 
-  Tensor<float> otherShiftedTrans = inputCacheFloat.otherTensorTrans;
+ //   std::cout << ssTensor << std::endl;
+ //   std::cout << otherVec << std::endl;
 
+   // actual computation
+   // int dim = state.range(0);
+   std::cout << "Before get vec" << std::endl;
+   Tensor<float> otherVec = inputCacheFloat.otherVecLastMode;
+
+   Tensor<float> otherVecDense("D", {DIM1}, Format{Dense});
+   std::vector<int> coords(otherVec.getOrder());
+   for (auto &value: taco::iterate<float>(otherVec)) {
+   	for (int i = 0; i < otherVec.getOrder(); i++) {
+		coords[i] = value.first[i];
+        }
+        otherVecDense.insert(coords, (float)value.second);
+
+   }
 
    IndexVar i("i");
    IndexVar j("j");
-   IndexVar k("k");
-   IndexExpr accelerateExpr = ssTensor(i, j) * otherShiftedTrans(j, k);
+   IndexExpr accelerateExpr = ssTensor(i, j) * otherVecDense(j);
    
    for (auto _ : state) {
     // Setup.
     state.PauseTiming();
-    Tensor<float> res("res", {DIM0, DIM0}, Format{Dense, Dense});
-    res(i, k) = accelerateExpr;
+    Tensor<float> res("res", {DIM0}, Format{Dense});
+    res(i) = accelerateExpr;
    
     IndexStmt stmt = res.getAssignment().concretize();
-    stmt = stmt.accelerate(new SparseMklSpmm(), accelerateExpr, true);
 
     res.compile(stmt);
-
     state.ResumeTiming();
     res.assemble();
     auto func = res.compute_split();
     auto pair = res.returnFuncPackedRaw(func);
     pair.first(func.data());
   }
+
 }
 
-TACO_BENCH_ARGS(bench_suitesparse_spmm_mkl, matmul_spmm, true)->UseRealTime();
+TACO_BENCH_ARGS(bench_suitesparse_spmv_taco, vecmul_spmv, true)->UseRealTime();

@@ -87,10 +87,10 @@ static void bench_suitesparse_spmv_mkl(benchmark::State& state, bool gen=true, i
     stmt = stmt.accelerate(new SparseMklSgemv(), accelerateExpr, true);
 
     res.compile(stmt);
+    state.ResumeTiming();
     res.assemble();
     auto func = res.compute_split();
     auto pair = res.returnFuncPackedRaw(func);
-    state.ResumeTiming();
     pair.first(func.data());
   }
 
