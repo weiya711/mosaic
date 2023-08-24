@@ -5,7 +5,7 @@
 #include "taco/format.h"
 #include "taco/index_notation/index_notation.h"
 #include "taco/accelerator_interface/cblas_interface.h"
-#include "taco/accelerator_interface/taco_interface.h"
+#include "taco/accelerator_interface/mkl_interface.h"
 #include "taco/accelerator_interface/tblis_interface.h"
 #include "taco/accelerator_interface/gsl_interface.h"
 #include "taco/accelerator_interface/tensor_interface.h"
@@ -91,7 +91,7 @@ static void bench_suitesparse_mattransmul_taco(benchmark::State& state, bool gen
 
    IndexVar i("i");
    IndexVar j("j");
-   IndexExpr accelerateExpr = s1() * ssTensor(j, i) * otherVecjDense(j) + s2() * otherVecDensei(i);
+   IndexExpr accelerateExpr = s1() * ssTensor(j, i) * otherVecjDense(j) + s2() * otherVeciDense(i);
    
    for (auto _ : state) {
     // Setup.

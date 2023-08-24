@@ -262,4 +262,28 @@ class MklVsub : public AbstractFunctionInterface{
         IndexVar j;
 };
 
+class MklVadd : public AbstractFunctionInterface{
+    public: 
+        MklVadd() : x(TensorObject(Type(taco::Float32, {Dimension()}), dense)), 
+                    y(TensorObject(Type(taco::Float32, {Dimension()}), dense)),
+                    s(TensorObject(Type(taco::Float32, {Dimension()}), dense)),
+                    i(IndexVar()) {};
+        AcceleratorStmt getStmt() const override {return y(i) = x(i) + s(i);}
+        std::vector<Argument> getArguments() const override {return 
+                                                {
+                                                    new DimArg(i), 
+                                                    new TensorObjectArg(x),
+                                                    new TensorObjectArg(s),
+                                                    new TensorObjectArg(y),
+                                                };}
+        std::string getReturnType() const override {return "void";}
+        std::string getFunctionName() const override {return "mkl_VsAdd_internal";}
+    private: 
+        TensorObject x;
+        TensorObject y;
+        TensorObject s;
+        IndexVar i;
+        IndexVar j;
+};
+
 #endif 

@@ -84,27 +84,43 @@ static void bench_suitesparse_residual_mkl(benchmark::State& state, bool gen=tru
         otherVeciDense.insert(coordsi, (float)value.second);
 
    }
+
+   TensorVar precomputed("precomputed", Type(taco::Float32, {Dimension(DIM0)}), Format{Dense});
+
    IndexVar i("i");
    IndexVar j("j");
    IndexExpr accelerateExpr = otherVeciDense(i) - ssTensor(i, j) * otherVecjDense(j);
-   
+
+   IndexStmt finalStmt;   
    for (auto _ : state) {
     // Setup.
     state.PauseTiming();
     Tensor<float> res("res", {DIM0}, Format{Dense});
     res(i) = accelerateExpr;
-   
-    IndexStmt stmt = res.getAssignment().concretize();
-    stmt = stmt.accelerate(new SparseMklSgemv(), accelerateExpr, true);
-    stmt = stmt.accelerate(new MklVsub(), accelerateExpr, true);
 
-    res.compile(stmt);
+    // res.registerAccelerator(new SparseMklSgemv());
+    // res.registerAccelerator(new MklVsub());
+    // res.accelerateOn();
+
+    IndexStmt stmt = res.getAssignment().concretize();
+    stmt = stmt.precompute(ssTensor(i,j) * otherVecjDense(j), {i}, {i}, precomputed);
+    std::cout << "STMT: " << stmt << std::endl;   
+    stmt = stmt.accelerate(new SparseMklSgemv(), ssTensor(i, j) * otherVecjDense(j));
+    std::cout << "STMT: " << stmt << std::endl;   
+    stmt = stmt.accelerate(new MklVsub(), otherVeciDense(i) - precomputed(i));
+    std::cout << "STMT: " << stmt << std::endl;   
+    finalStmt = stmt; 
+
+    res.compile();
     state.ResumeTiming();
     res.assemble();
     auto func = res.compute_split();
     auto pair = res.returnFuncPackedRaw(func);
     pair.first(func.data());
+//    res.compute();
   }
+
+  std::cout << "STMT: " << finalStmt << std::endl;
 
 }
 

@@ -55,7 +55,7 @@ static void bench_suitesparse_plus3_mkl(benchmark::State& state, bool gen=true, 
   state.counters["dimy"] = DIM1;
   state.counters["nnz"] = inputCacheFloat.nnz;
 
-  Tensor<float> otherShifted2 = inputCacheFloat.otherShifted2;
+  Tensor<float> otherShifted2 = inputCacheFloat.thirdTensor;
 
 
    IndexVar i("i");

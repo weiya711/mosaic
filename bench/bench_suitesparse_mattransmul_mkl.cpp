@@ -91,7 +91,7 @@ static void bench_suitesparse_mattransmul_mkl(benchmark::State& state, bool gen=
 
    IndexVar i("i");
    IndexVar j("j");
-   IndexExpr accelerateExpr = s1() * ssTensor(j, i) * otherVecjDense(j) + s2() * otherVecDensei(i);
+   IndexExpr accelerateExpr = s1() * ssTensor(j, i) * otherVecjDense(j) + s2() * otherVeciDense(i);
    
    for (auto _ : state) {
     // Setup.
