@@ -15,7 +15,7 @@
 #define TACO_BENCH(bench)         \
   BENCHMARK(bench)                \
   ->Unit(benchmark::kMillisecond) \
-  ->Repetitions(1)               \
+  ->Repetitions(10)               \
   ->Iterations(1)                 \
   ->ReportAggregatesOnly(true)    \
   ->UseRealTime()                 \
@@ -38,7 +38,7 @@
   BENCHMARK_CAPTURE(bench, name, arg)     \
   ->Unit(benchmark::kMicrosecond)         \
   ->Iterations(1)                         \
-  ->Repetitions(1)               \
+  ->Repetitions(10)               \
   ->ReportAggregatesOnly(true)            \
   ->UseRealTime()                         \
   >MinWarmUpTime(10)
@@ -48,7 +48,7 @@
   ->Unit(benchmark::kMicrosecond)               \
   ->Iterations(1)                               \
   ->ReportAggregatesOnly(true)                  \
-  ->Repetitions(1)                             \
+  ->Repetitions(10)                             \
   ->UseRealTime()                               \
   ->MinWarmUpTime(10)
 

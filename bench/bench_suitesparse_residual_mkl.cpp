@@ -89,38 +89,53 @@ static void bench_suitesparse_residual_mkl(benchmark::State& state, bool gen=tru
 
    IndexVar i("i");
    IndexVar j("j");
-   IndexExpr accelerateExpr = otherVeciDense(i) - ssTensor(i, j) * otherVecjDense(j);
+   IndexExpr accelerateExpr = ssTensor(i, j) * otherVecjDense(j);
+
 
    IndexStmt finalStmt;   
    for (auto _ : state) {
     // Setup.
     state.PauseTiming();
-    Tensor<float> res("res", {DIM0}, Format{Dense});
-    res(i) = accelerateExpr;
+    Tensor<float> res1("res1", {DIM0}, Format{Dense});
+    Tensor<float> res2("res2", {DIM0}, Format{Dense});
+    res1(i) = accelerateExpr;
 
+    IndexExpr accelerateExpr2 = otherVeciDense(i) - res1(i);
+    res2(i) = accelerateExpr2;
     // res.registerAccelerator(new SparseMklSgemv());
     // res.registerAccelerator(new MklVsub());
     // res.accelerateOn();
 
-    IndexStmt stmt = res.getAssignment().concretize();
-    stmt = stmt.precompute(ssTensor(i,j) * otherVecjDense(j), {i}, {i}, precomputed);
-    std::cout << "STMT: " << stmt << std::endl;   
-    stmt = stmt.accelerate(new SparseMklSgemv(), ssTensor(i, j) * otherVecjDense(j));
-    std::cout << "STMT: " << stmt << std::endl;   
-    stmt = stmt.accelerate(new MklVsub(), otherVeciDense(i) - precomputed(i));
-    std::cout << "STMT: " << stmt << std::endl;   
-    finalStmt = stmt; 
+    IndexStmt stmt1 = res1.getAssignment().concretize();
+    stmt1 = stmt1.accelerate(new SparseMklSgemv(), accelerateExpr, true);
+    IndexStmt stmt2 = res2.getAssignment().concretize();
+    stmt2 = stmt2.accelerate(new MklVsub(), accelerateExpr2, true);
+    
+//    stmt = stmt.precompute(ssTensor(i,j) * otherVecjDense(j), {i}, {i}, precomputed);
+//    std::cout << "STMT: " << stmt << std::endl;   
+//    stmt = stmt.accelerate(new SparseMklSgemv(), ssTensor(i, j) * otherVecjDense(j));
+//    std::cout << "STMT: " << stmt << std::endl;   
+//    stmt = stmt.accelerate(new MklVsub(), otherVeciDense(i) - precomputed(i));
+//    std::cout << "STMT: " << stmt << std::endl;   
 
-    res.compile();
+    res1.compile(stmt1);
     state.ResumeTiming();
-    res.assemble();
-    auto func = res.compute_split();
-    auto pair = res.returnFuncPackedRaw(func);
-    pair.first(func.data());
+    res1.assemble();
+    auto func1 = res1.compute_split();
+    auto pair1 = res1.returnFuncPackedRaw(func1);
+    pair1.first(func1.data());
+    state.PauseTiming();
+
+    res2.compile(stmt2);
+    state.ResumeTiming();
+    res2.assemble();
+    auto func2 = res2.compute_split();
+    auto pair2 = res2.returnFuncPackedRaw(func2);
+    pair2.first(func2.data());
+
 //    res.compute();
   }
 
-  std::cout << "STMT: " << finalStmt << std::endl;
 
 }
 

@@ -13,7 +13,7 @@
 using namespace taco;
 
 
-static void bench_suitesparse_plus3_mkl(benchmark::State& state, bool gen=true, int fill_value=0) {
+static void bench_suitesparse_plus3_taco(benchmark::State& state, bool gen=true, int fill_value=0) {
   bool GEN_OTHER = (getEnvVar("GEN") == "ON" && gen);
 
   // Counters must be present in every run to get reported to the CSV.
@@ -79,5 +79,5 @@ static void bench_suitesparse_plus3_mkl(benchmark::State& state, bool gen=true, 
   }
 }
 
-TACO_BENCH_ARGS(bench_suitesparse_plus3_mkl, mat_plus3, false)->UseRealTime();
+TACO_BENCH_ARGS(bench_suitesparse_plus3_taco, mat_plus3, false)->UseRealTime();
 

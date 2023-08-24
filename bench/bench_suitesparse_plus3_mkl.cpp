@@ -60,23 +60,37 @@ static void bench_suitesparse_plus3_mkl(benchmark::State& state, bool gen=true, 
 
    IndexVar i("i");
    IndexVar j("j");
-   IndexExpr accelerateExpr = ssTensor(i, j) + otherShifted(i, j) + otherShifted2(i, j);
-   
+   IndexExpr accelerateExpr = ssTensor(i, j) + otherShifted(i, j);
+ 	 
    for (auto _ : state) {
     // Setup.
     state.PauseTiming();
-    Tensor<float> res("res", {DIM0, DIM1}, Format{Dense, Sparse});
-    res(i, j) = accelerateExpr;
-   
-    IndexStmt stmt = res.getAssignment().concretize();
-    stmt = stmt.accelerate(new MklAdd(), accelerateExpr, true);
+    Tensor<float> res1("res1", {DIM0, DIM1}, Format{Dense, Sparse});
+    Tensor<float> res2("res2", {DIM0, DIM1}, Format{Dense, Sparse});
+    res1(i, j) = accelerateExpr;
+    IndexExpr accelerateExpr2 = res1(i, j) + otherShifted2(i, j);
+    res2(i, j) = accelerateExpr2; 
 
-    res.compile(stmt);
+    IndexStmt stmt1 = res1.getAssignment().concretize();
+    stmt1 = stmt1.accelerate(new MklAdd(), accelerateExpr, true);
+    IndexStmt stmt2 = res2.getAssignment().concretize();
+    stmt2 = stmt2.accelerate(new MklAdd(), accelerateExpr2, true);
+
+    res1.compile(stmt1);
     state.ResumeTiming();
-    res.assemble();
-    auto func = res.compute_split();
-    auto pair = res.returnFuncPackedRaw(func);
-    pair.first(func.data());
+    res1.assemble();
+    auto func1 = res1.compute_split();
+    auto pair1 = res1.returnFuncPackedRaw(func1);
+    pair1.first(func1.data());
+    state.PauseTiming();
+
+    res2.compile(stmt2);
+    state.ResumeTiming();
+    res2.assemble();
+    auto func2 = res2.compute_split();
+    auto pair2 = res2.returnFuncPackedRaw(func2);
+    pair2.first(func2.data());
+
   }
 }
 

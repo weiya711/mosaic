@@ -94,15 +94,11 @@ static void bench_suitesparse_residual_taco(benchmark::State& state, bool gen=tr
     state.PauseTiming();
     Tensor<float> res("res", {DIM0}, Format{Dense});
     res(i) = accelerateExpr;
-   
-    IndexStmt stmt = res.getAssignment().concretize();
 
-    res.compile(stmt);
+    res.compile();
     state.ResumeTiming();
     res.assemble();
-    auto func = res.compute_split();
-    auto pair = res.returnFuncPackedRaw(func);
-    pair.first(func.data());
+    res.compute();
   }
 
 }
